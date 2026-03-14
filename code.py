@@ -222,7 +222,7 @@ while True:
             volume = last_volume
 
     # Keypad
-    # The third key is intentionally unprogrammed
+    # The third key is intentionally not programmed
     if keypad[0]:       # Change input to Optical
         logger.debug("switching to optical")
         keypad_url = baseURL + opticalInput
