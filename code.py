@@ -7,11 +7,14 @@ import board
 import socketpool
 import wifi
 import time
+import neopixel
 from adafruit_neokey.neokey1x4 import NeoKey1x4
 import adafruit_logging
 import adafruit_requests
 from adafruit_requests import OutOfRetries
 from adafruit_seesaw import digitalio, rotaryio, seesaw
+from neopixel import NeoPixel
+
 from ElementTree import fromstring
 import adafruit_led_animation.color
 from adafruit_max1704x import MAX17048
@@ -183,6 +186,7 @@ my_mqtt.connect()
 increment = int(volume_increment)  # mirror the Android app, increase volume by 2 with each turn
 is_playing = False
 logger.info("Bluesound companion starting up!")
+onboardLED = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=1)
 
 while True:
     position = -encoder.position    # turn clockwise to increase, counter-clockwise to decrease
@@ -263,14 +267,17 @@ while True:
         if batteryVoltage < 3.7 and not batteryWarn:
             logger.debug("We need to warn")
             batteryWarn = True
+            onboardLED.fill((255, 128, 0))
             do_publish(battery_feed, batteryVoltage)
         elif batteryVoltage >= 4.0 and batteryWarn:
             logger.debug("We need to reset the warn flag")
             do_publish(battery_feed, batteryVoltage)
+            onboardLED.fill((0, 255, 0))
             batteryWarn = False
-        else:
-            logger.debug(f"battery warning {batteryVoltage:.2f} Volts, and battery warn is {batteryWarn}")
+        elif 3.9 > batteryVoltage >= 3.7:
+            onboardLED.fill((255, 255, 0))
 
+        logger.debug(f"battery warning {batteryVoltage:.2f} Volts, and battery warn is {batteryWarn}")
         batteryCheck = time.monotonic()
 
     time.sleep(0.25)
