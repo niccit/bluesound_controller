@@ -64,8 +64,12 @@ cutoutsBase = [
    ];
 
 cutoutsLeft = [
-   [11, 2,  12, 8, 0, yappRectangle, yappCenter, yappCoordPCB]  // USB power
+   [11, 2, 12, 8, 0, yappRectangle, yappCenter, yappCoordPCB]  // USB power
    ];
+
+cutoutsRight = [
+   [11, 13, 10, 10, 3.25, yappCircle, yappCenter, yappLidOnly]  // USB power
+];
 
 cutoutsLid = [
    [40, 1, 15, 73 , 0, yappRectangle]    // Keyboard

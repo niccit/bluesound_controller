@@ -2,6 +2,8 @@
 import os
 import adafruit_connection_manager
 import adafruit_minimqtt.adafruit_minimqtt
+import alarm
+from alarm import pin
 from adafruit_minimqtt.adafruit_minimqtt import MMQTTException
 import board
 import socketpool
@@ -12,15 +14,14 @@ from adafruit_neokey.neokey1x4 import NeoKey1x4
 import adafruit_logging
 import adafruit_requests
 from adafruit_requests import OutOfRetries
-from adafruit_seesaw import digitalio, rotaryio, seesaw
-from neopixel import NeoPixel
-
+from adafruit_seesaw import rotaryio, seesaw
+from adafruit_seesaw import digitalio as seesaw_digitalio
 from ElementTree import fromstring
 import adafruit_led_animation.color
 from adafruit_max1704x import MAX17048
 
 # Use to test that properly formatted objects will be passed and to turn on debug logging
-testing = False
+testing = True
 
 # ---- Set up Logging ---- #
 logger = adafruit_logging.getLogger("bluesound_logger")
@@ -37,13 +38,16 @@ requests = adafruit_requests.Session(pool)
 # --- Battery Monitor --- #
 batMon = MAX17048(i2c_bus=board.I2C())
 
+# --- Hibernate/Wake Switch --- #
+nightNight_pin = board.D9
+
 # --- I2C Setup --- #
 i2c = board.STEMMA_I2C()
 
 # ---- Volume Control setup ---- #
 seesaw = seesaw.Seesaw(i2c, 0x37)
 seesaw.pin_mode(24, seesaw.INPUT_PULLUP)
-button = digitalio.DigitalIO(seesaw, 24)
+button = seesaw_digitalio.DigitalIO(seesaw, 24)
 button_held = False
 encoder = rotaryio.IncrementalEncoder(seesaw)
 last_position = None
@@ -185,6 +189,9 @@ def send_request(url):
 my_mqtt.connect()
 increment = int(volume_increment)  # mirror the Android app, increase volume by 2 with each turn
 is_playing = False
+sleeping = time.monotonic()
+logger.debug(f"sleeping starting and is {sleeping}")
+wait_to_sleep = 300
 logger.info("Bluesound companion starting up!")
 onboardLED = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=1)
 
@@ -221,12 +228,13 @@ while True:
                 logger.debug(f"new_volume is less than or equal to 100")
                 volume_url = f"{baseURL}{volumeChange}{new_volume}"
                 send_request(volume_url)
+        sleeping = time.monotonic()
+        logger.debug(f"last position block sleeping is now {sleeping} seconds")
 
     # If the rotary encoder is pressed, if volume is not 0 set it to zero/mute
     # Store the volume prior to change
     # If the volume is zero, restore volume to last saved level
     if not button.value:
-        logger.debug(f"button pushed volume is {volume}")
         if volume != 0:
             last_volume = volume
             mute_url = f"{baseURL}{volumeChange}0"
@@ -238,6 +246,8 @@ while True:
             logger.debug(f"url to send is unmute_url: {unmute_url}")
             send_request(unmute_url)
             volume = last_volume
+        sleeping = time.monotonic()
+        logger.debug(f"not button block sleeping is now {sleeping} seconds")
 
     # Keypad
     # The third key is intentionally not programmed
@@ -245,10 +255,14 @@ while True:
         logger.debug("switching to optical")
         keypad_url = baseURL + opticalInput
         send_request(keypad_url)
+        sleeping = time.monotonic()
+        logger.debug(f"optical sleeping is now {sleeping} seconds")
     if keypad[1]:       # Change input to HDMI Arc
         logger.debug("switching to HDMI")
         keypad_url = baseURL + hdmiInput
         send_request(keypad_url)
+        sleeping = time.monotonic()
+        logger.debug(f"hdmi sleeping is now {sleeping} seconds")
     if keypad[3]:       # Play TuneIn favorite Aloha Joe Radio
         logger.debug("tuning in to Aloha Joe Radio")
         if not is_playing:
@@ -259,9 +273,12 @@ while True:
             keypad_url = baseURL + aloha_joe_pause
             send_request(keypad_url)
             is_playing = False
+        sleeping = time.monotonic()
+        logger.debug(f"AJ sleeping is now {sleeping} seconds")
 
     # Check the voltage of the battery, send a message to MQTT if it's below 3.7V
     if batteryCheck is None or time.monotonic() > batteryCheck + batteryCheckWait:
+        logger.debug(f"sleeping is current {sleeping} seconds")
         logger.debug("battery check hello")
         batteryVoltage, batteryPercentage = monitor_battery()
         if batteryVoltage < 3.7 and not batteryWarn:
@@ -279,6 +296,10 @@ while True:
 
         logger.debug(f"battery warning {batteryVoltage:.2f} Volts, and battery warn is {batteryWarn}")
         batteryCheck = time.monotonic()
+
+    if time.monotonic() > sleeping + wait_to_sleep:
+        hibernate_alarm = alarm.pin.PinAlarm(pin=nightNight_pin, value=False, edge=False, pull=True)
+        alarm.exit_and_deep_sleep_until_alarms(hibernate_alarm)
 
     time.sleep(0.25)
 
