@@ -49,7 +49,7 @@ pcb = [
 
 pcbStands = [
    [2, 3.25, standoffHeight, default, standoffDiameter, 2, yappAllCorners, yappBaseOnly, yappHole, yappSelfThreading]
-   , [39.25, 18.5, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Left back keyboard
+   ,[39.25, 18.5, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Left back keyboard
    ,[55.75, 18.5, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Left front keyboard
    ,[39.25, 56.5, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Right back keyboard
    ,[55.75, 56.5, 29, 3, yappLidOnly, yappHole, yappSelfThreading, yappNoFillet]   // Right front keyboard
@@ -68,7 +68,7 @@ cutoutsLeft = [
    ];
 
 cutoutsRight = [
-   [11, 13, 10, 10, 3.25, yappCircle, yappCenter, yappLidOnly]  // USB power
+   [11, 13, 10, 10, 3.9, yappCircle, yappCenter, yappLidOnly]  // wake from sleep alarm
 ];
 
 cutoutsLid = [

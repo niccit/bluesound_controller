@@ -21,7 +21,7 @@ import adafruit_led_animation.color
 from adafruit_max1704x import MAX17048
 
 # Use to test that properly formatted objects will be passed and to turn on debug logging
-testing = True
+testing = False
 
 # ---- Set up Logging ---- #
 logger = adafruit_logging.getLogger("bluesound_logger")
@@ -293,6 +293,8 @@ while True:
             batteryWarn = False
         elif 3.9 > batteryVoltage >= 3.7:
             onboardLED.fill((255, 255, 0))
+        else:
+            onboardLED.fill((0, 0, 0))
 
         logger.debug(f"battery warning {batteryVoltage:.2f} Volts, and battery warn is {batteryWarn}")
         batteryCheck = time.monotonic()
