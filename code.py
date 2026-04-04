@@ -57,12 +57,14 @@ volume_increment = os.getenv("volume_inc")  # Android app increments by 2
 # Colors
 hdmi_source = adafruit_led_animation.color.CYAN
 optical_source = adafruit_led_animation.color.JADE
+prog_rock = adafruit_led_animation.color.PURPLE
 aloha_joe = adafruit_led_animation.color.RED
 
 # 4 key NeoKey
 keypad = NeoKey1x4(i2c, addr=0x30)
 keypad.pixels[0] = optical_source
 keypad.pixels[1] = hdmi_source
+keypad.pixels[2] = prog_rock
 keypad.pixels[3] = aloha_joe
 
 # ---- Bluesound Node ---- #
@@ -74,6 +76,8 @@ volumeQuery = "Volume"
 volumeChange = "Volume?level="
 aloha_joe_play = "Play?url=TuneIn%3As49372&preset_id&image=http://cdn-radiotime-logos.tunein.com/s49372g.png"
 aloha_joe_pause = "Pause?url=TuneIn%3As49372&preset_id&image=http://cdn-radiotime-logos.tunein.com/s49372g.png"
+prog_rock_play = "Play?url=TuneIn%3Ahttps%3A%2F%2Fprogressieverock.nl%3A%2Fflac&image=http://cdn-radiotime-logos.tunein.com/s0q.png"
+prog_rock_pause = "Pause?url=TuneIn%3Ahttps%3A%2F%2Fprogressieverock.nl%3A%2Fflac&image=http://cdn-radiotime-logos.tunein.com/s0q.png"
 
 # ---- MQTT ---- #
 # Config
@@ -263,6 +267,16 @@ while True:
         send_request(keypad_url)
         sleeping = time.monotonic()
         logger.debug(f"hdmi sleeping is now {sleeping} seconds")
+    if keypad[2]:       # Play TuneIn favorite Aloha Joe Radio
+        logger.debug("tuning in to Prog Rock Radio")
+        if not is_playing:
+            keypad_url = baseURL + prog_rock_play
+            send_request(keypad_url)
+            is_playing = True
+        else:
+            keypad_url = baseURL + prog_rock_pause
+            send_request(keypad_url)
+            is_playing = False
     if keypad[3]:       # Play TuneIn favorite Aloha Joe Radio
         logger.debug("tuning in to Aloha Joe Radio")
         if not is_playing:
@@ -301,7 +315,7 @@ while True:
 
     if time.monotonic() > sleeping + wait_to_sleep:
         hibernate_alarm = alarm.pin.PinAlarm(pin=nightNight_pin, value=False, edge=False, pull=True)
-        alarm.exit_and_deep_sleep_until_alarms(hibernate_alarm)
+        alarm.light_sleep_until_alarms(hibernate_alarm)
 
     time.sleep(0.25)
 

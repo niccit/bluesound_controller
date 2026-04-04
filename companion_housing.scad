@@ -94,15 +94,15 @@ module key_plate() {
     translate([-35.5, -1.5, 1 - 0.01])
     linear_extrude(1)
         color("blue")text("OPT", font = "Liberation Sans", size = 4.5);
-    translate([-15, -1.5, 1 - 0.01])
+    translate([-17, -1.5, 1 - 0.01])
     linear_extrude(1)
         color("blue")text("HDMI", font = "Liberation Sans", size = 4.5);
-    translate([17, 0.5, 1 - 0.01])
+    translate([5, -1.5, 1 - 0.01])
     linear_extrude(1)
-        color("blue")text("ALOHA", font = "Liberation Sans", size = 4);
-    translate([21, -4.25, 1 - 0.01])
+        color("blue")text("PRNL", font = "Liberation Sans", size = 4);
+    translate([25, -1.25, 1 - 0.01])
     linear_extrude(1)
-        color("blue")text("JOE", font = "Liberation Sans", size = 4);
+        color("blue")text("AJ", font = "Liberation Sans", size = 4);
 }
 
 module volume_plate() {
@@ -116,9 +116,9 @@ module volume_plate() {
 }
 
 // Set to true if you want to create separate lable plates for the project
-show_all = false;
+show_all = true;
 show_labels = false;
-show_case = true;
+show_case = false;
 
 if (show_all == true) {
     YAPPgenerate();
