@@ -59,10 +59,15 @@ hdmi_source = adafruit_led_animation.color.CYAN
 optical_source = adafruit_led_animation.color.JADE
 prog_rock = adafruit_led_animation.color.PURPLE
 aloha_joe = adafruit_led_animation.color.RED
+radio_marg = adafruit_led_animation.color.ORANGE
+radio_calico = adafruit_led_animation.color.AMBER
+radio_para_global = adafruit_led_animation.color.GREEN
+radio_para_main = adafruit_led_animation.color.PINK
 off = adafruit_led_animation.color.BLACK
 
 # 4 key NeoKey
-keypad = NeoKey1x4(i2c, addr=0x30)
+keypad_1 = NeoKey1x4(i2c, addr=0x30)
+keypad_2 = NeoKey1x4(i2c, addr=0x31)
 
 # ---- Bluesound Node ---- #
 baseURL = os.getenv("bluesound_baseUrl")
@@ -71,10 +76,16 @@ opticalInput = "Play?url=Capture%3Ahw%3Aimxspdif%2C0%2F1%2F25%2F2%3Fid%3Dinput1&
 hdmiInput = "Play?url=Capture%3Ahw%3Aimxspdif%2C0%2F1%2F25%2F2%3Fid%3Dinput2&preset_id&image=/images/capture/ic_hdmi.png"
 volumeQuery = "Volume"
 volumeChange = "Volume?level="
-aloha_joe_play = "Play?url=TuneIn%3As49372&preset_id&image=http://cdn-radiotime-logos.tunein.com/s49372g.png"
-aloha_joe_pause = "Pause?url=TuneIn%3As49372&preset_id&image=http://cdn-radiotime-logos.tunein.com/s49372g.png"
-prog_rock_play = "Play?url=TuneIn%3Ahttps%3A%2F%2Fprogressieverock.nl%3A%2Fflac&image=http://cdn-radiotime-logos.tunein.com/s0q.png"
-prog_rock_pause = "Pause?url=TuneIn%3Ahttps%3A%2F%2Fprogressieverock.nl%3A%2Fflac&image=http://cdn-radiotime-logos.tunein.com/s0q.png"
+pause_media = "Pause"
+play_media = "Play?"
+# Radio Stations
+aloha_joe_station = "url=https%3A%2F%2Flisten.warpradio.com:8005/ALOHAJOE?type=http&nocache=11679&image=https://player.warpradio.com/alohajoe/images/alohajoe_logo_half.png"
+prog_rock_station = "url=https%3A%2F%2Fprogressieverock.nl/flac&image=https://progressieverock.nl/logo.jpg"
+radio_margaritaville_station = "url=https%3A%2F%2Fs12.myradiostream.com:18442/listen.mp3&image=https://www.radio.net/175/margaritaville.png?version=bca7bc48b3bad6a3cbc6e937d79cd8e2e5728e14"
+radio_calico_station = "url=https%3A%2F%2fstream.radio-calico.com/calico&image=https://www.radio-calico.com/wp-content/uploads/2023/04/RadioCalicoLogoEaster200.png"
+radio_paradise_global_station = "url=RadioParadise%3A%2F3%3A20%2FThe%2520Globe&image=https://img.radioparadise.com/channels/0/3/cover_512x512/0.jpg"
+radio_paradise_main_station = "url=RadioParadise%3A%2F0%3A20&image=https://img.radioparadise.com/channels/0/0/cover_512x512/0.jpg"
+
 
 # ---- MQTT ---- #
 # Config
@@ -151,16 +162,24 @@ keypad_pixels = False   # True = on, False = off
 def set_leds(color=None):
     global keypad_pixels
     if color is None:
-        keypad.pixels[0] = optical_source
-        keypad.pixels[1] = hdmi_source
-        keypad.pixels[2] = prog_rock
-        keypad.pixels[3] = aloha_joe
+        keypad_1.pixels[0] = optical_source
+        keypad_1.pixels[1] = hdmi_source
+        keypad_1.pixels[2] = prog_rock
+        keypad_1.pixels[3] = aloha_joe
+        keypad_2.pixels[0] = radio_marg
+        keypad_2.pixels[1] = radio_calico
+        keypad_2.pixels[2] = radio_para_global
+        keypad_2.pixels[3] = radio_para_main
         keypad_pixels = True
     else:
-        keypad.pixels[0] = color
-        keypad.pixels[1] = color
-        keypad.pixels[2] = color
-        keypad.pixels[3] = color
+        keypad_1.pixels[0] = color
+        keypad_1.pixels[1] = color
+        keypad_1.pixels[2] = color
+        keypad_1.pixels[3] = color
+        keypad_2.pixels[0] = color
+        keypad_2.pixels[1] = color
+        keypad_2.pixels[2] = color
+        keypad_2.pixels[3] = color
         onboardLED.fill(color)
         keypad_pixels = False
 
@@ -207,8 +226,8 @@ def send_request(url):
 # ---- Startup ---- #
 my_mqtt.connect()
 increment = int(volume_increment)  # mirror the Android app, increase volume by 2 with each turn
-is_playing = False
 last_volume = None
+active_station = None
 wait_to_sleep = 300
 logger.info("Bluesound companion starting up!")
 onboardLED = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=1)
@@ -283,42 +302,97 @@ while True:
 
     # Keypad
     # The third key is intentionally not programmed
-    if keypad[0]:       # Change input to Optical
+    if keypad_1[0]:       # Change input to Optical
         logger.debug("switching to optical")
         keypad_url = baseURL + opticalInput
         send_request(keypad_url)
         sleeping = time.monotonic()
         logger.debug(f"optical sleeping is now {sleeping} seconds")
-    if keypad[1]:       # Change input to HDMI Arc
+    if keypad_1[1]:       # Change input to HDMI Arc
         logger.debug("switching to HDMI")
         keypad_url = baseURL + hdmiInput
         send_request(keypad_url)
         sleeping = time.monotonic()
         logger.debug(f"hdmi sleeping is now {sleeping} seconds")
-    if keypad[2]:       # Play TuneIn favorite Aloha Joe Radio
+    if keypad_1[2]:       # Play Progressive Rock NL
         logger.debug("tuning in to Prog Rock NL Radio")
-        if not is_playing:
-            keypad_url = baseURL + prog_rock_play
+        logger.debug(f"active_station is {active_station}")
+        if active_station is not "PRNL":
+            keypad_url = baseURL + play_media + prog_rock_station
             send_request(keypad_url)
-            is_playing = True
-        else:
-            keypad_url = baseURL + prog_rock_pause
+            active_station = "PRNL"
+        elif active_station is "PRNL":
+            keypad_url = baseURL + pause_media
+            logger.info("sending pause url")
             send_request(keypad_url)
-            is_playing = False
+            active_station = None
         sleeping = time.monotonic()
         logger.debug(f"PRNL sleeping is now {sleeping} seconds")
-    if keypad[3]:       # Play TuneIn favorite Aloha Joe Radio
+    if keypad_1[3]:       # Play TuneIn favorite Aloha Joe Radio
         logger.debug("tuning in to Aloha Joe Radio")
-        if not is_playing:
-            keypad_url = baseURL + aloha_joe_play
+        logger.debug(f"active_station is {active_station}")
+        if active_station is not "AJ":
+            keypad_url = baseURL + play_media + aloha_joe_station
             send_request(keypad_url)
-            is_playing = True
-        else:
-            keypad_url = baseURL + aloha_joe_pause
+            active_station = "AJ"
+        elif active_station is "AJ":
+            keypad_url = baseURL + pause_media
             send_request(keypad_url)
-            is_playing = False
+            active_station = None
         sleeping = time.monotonic()
         logger.debug(f"AJ sleeping is now {sleeping} seconds")
+    if keypad_2[0]:       # Play Radio Margaritaville
+        logger.debug("tuning in to Radio Margaritaville")
+        logger.debug(f"active_station is {active_station}")
+        if active_station is not "RM":
+            keypad_url = baseURL + play_media + radio_margaritaville_station
+            send_request(keypad_url)
+            active_station = "RM"
+        elif active_station is "RM":
+            keypad_url = baseURL + pause_media
+            send_request(keypad_url)
+            active_station = None
+        sleeping = time.monotonic()
+        logger.debug(f"RM sleeping is now {sleeping} seconds")
+    if keypad_2[1]:       # Play TuneIn favorite Radio Calcio
+        logger.debug("tuning in to Radio Calico")
+        logger.debug(f"active_station is {active_station}")
+        if active_station is not "RC":
+            keypad_url = baseURL + play_media +  radio_calico_station
+            send_request(keypad_url)
+            active_station = "RC"
+        else:
+            keypad_url = baseURL + pause_media
+            send_request(keypad_url)
+            active_station = None
+        sleeping = time.monotonic()
+        logger.debug(f"RC sleeping is now {sleeping} seconds")
+    if keypad_2[2]:       # Play Radio Paradise Global Mix
+        logger.debug("tuning in to Radio Paradise Global Mix")
+        logger.debug(f"active_station is {active_station}")
+        if active_station is not "RPGM":
+            keypad_url = baseURL + play_media + radio_paradise_global_station
+            send_request(keypad_url)
+            active_station = "RPGM"
+        elif active_station is "RPGM":
+            keypad_url = baseURL + pause_media
+            send_request(keypad_url)
+            active_station = None
+        sleeping = time.monotonic()
+        logger.debug(f"RPGM sleeping is now {sleeping} seconds")
+    if keypad_2[3]:       # Play Radio Paradise Main Mix
+        logger.debug("tuning in to Radio Paradise Main Mix")
+        logger.debug(f"active_station is {active_station}")
+        if active_station is not "RPMM":
+            keypad_url = baseURL + play_media + radio_paradise_main_station
+            send_request(keypad_url)
+            active_station = "RPMM"
+        elif active_station is "RPMM":
+            keypad_url = baseURL + pause_media
+            send_request(keypad_url)
+            active_station = None
+        sleeping = time.monotonic()
+        logger.debug(f"RPMM sleeping is now {sleeping} seconds")
 
     # Check the voltage of the battery, send a message to MQTT if it's below 3.7V
     if batteryCheck is None or time.monotonic() > batteryCheck + batteryCheckWait:
