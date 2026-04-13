@@ -422,9 +422,9 @@ while True:
     if time.monotonic() > sleeping + wait_to_sleep:
         hibernate_alarm = alarm.pin.PinAlarm(pin=nightNight_pin, value=False, edge=False, pull=True)
         set_leds(off)
-        logger.debug("going into light sleep")
+        logger.debug("going into deep sleep")
         sleeping = time.monotonic()
-        alarm.light_sleep_until_alarms(hibernate_alarm)
+        alarm.exit_and_deep_sleep_until_alarms(hibernate_alarm)
 
     time.sleep(0.25)
 

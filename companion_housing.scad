@@ -1,3 +1,4 @@
+use <companion_housing.scad>
 // SPDX-License-Identifier: MIT
 $fa = 1;
 $fs = 0.4;
@@ -89,7 +90,7 @@ snapJoins = [
 //    ,[71, 68, 90, 1, yappLid, "liberation Mono:style=bold", 3, "JOE"]
 //    ];
 
-module key_plate() {
+module key_plate_top() {
     cube([73, 10, 2], center=true);
     translate([-35.5, -1.5, 1 - 0.01])
     linear_extrude(1)
@@ -105,6 +106,22 @@ module key_plate() {
         color("blue")text("AJ", font = "Liberation Sans", size = 4);
 }
 
+module key_plate_side() {
+    cube([73, 10, 2], center=true);
+    translate([-35.5, -1.5, 1 - 0.01])
+    linear_extrude(1)
+        color("blue")text("RM", font = "Liberation Sans", size = 4.5);
+    translate([-17, -1.5, 1 - 0.01])
+    linear_extrude(1)
+        color("blue")text("RC", font = "Liberation Sans", size = 4.5);
+    translate([-1, -1.5, 1 - 0.01])
+    linear_extrude(1)
+        color("blue")text("RPGM", font = "Liberation Sans", size = 4);
+    translate([19, -1.25, 1 - 0.01])
+    linear_extrude(1)
+        color("blue")text("RPMM", font = "Liberation Sans", size = 4);
+}
+
 module volume_plate() {
     cube([20, 14, 2], center=true);
     translate([-7, 1.5, 1 - 0.01])
@@ -116,8 +133,8 @@ module volume_plate() {
 }
 
 // Set to true if you want to create separate lable plates for the project
-show_all = true;
-show_labels = false;
+show_all = false;
+show_labels = true;
 show_case = false;
 
 if (show_all == true) {
@@ -133,7 +150,9 @@ if (show_case == true) {
 }
 
 if (show_labels == true) {
-    key_plate();
+    key_plate_top();
     translate([0, -20, 0])
+        key_plate_side();
+    translate([0, -40, 0])
         volume_plate();
 }
